@@ -26,4 +26,6 @@
  *               properties:
  *                 status:
  *                   type: string
+ *                 database:
+ *                   type: string
  */
