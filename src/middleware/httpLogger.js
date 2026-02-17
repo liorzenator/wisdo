@@ -12,7 +12,7 @@ export const httpLogger = (req, res, next) => {
   const start = Date.now();
   const { method, url } = req;
 
-  if (blacklist.includes(url)) {
+  if (blacklist.includes(url) || url.startsWith('/api-docs')) {
     return next();
   }
 
