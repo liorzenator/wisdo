@@ -1,6 +1,15 @@
 import { randomBytes } from 'crypto';
+import { Request, Response, NextFunction } from 'express';
 
-export const correlationIdMiddleware = (req, res, next) => {
+declare global {
+  namespace Express {
+    interface Request {
+      correlationId?: string;
+    }
+  }
+}
+
+export const correlationIdMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   let correlationId = req.get('x-correlation-id');
 
   if (!correlationId) {

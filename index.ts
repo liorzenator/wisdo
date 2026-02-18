@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import 'dotenv/config';
 import env from './src/config/environment.js';
 import connectDatabase from './src/config/database.js';
@@ -9,7 +9,8 @@ import { correlationIdMiddleware } from './src/middleware/correlationId.js';
 import { httpLogger } from './src/middleware/httpLogger.js';
 import mongoose from 'mongoose';
 import packageJson from './package.json' with { type: 'json' };
-const { version } = packageJson;
+
+const { version } = packageJson as { version: string };
 
 const logger = getLogger(import.meta.url);
 const app = express();
@@ -30,11 +31,11 @@ if (env.NODE_ENV !== 'production') {
 }
 
 // Routes (documentation moved to /docs)
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to Wisdo API' });
 });
 
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'up' : 'down';
   res.json({
     environment: process.env.NODE_ENV,

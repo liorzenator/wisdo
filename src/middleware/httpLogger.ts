@@ -1,3 +1,4 @@
+import { Request, Response, NextFunction } from 'express';
 import { getLogger } from '../../logger.js';
 
 const logger = getLogger(import.meta.url, 'http');
@@ -8,7 +9,7 @@ const blacklist = [
   '/.well-known/appspecific/com.chrome.devtools.json'
 ];
 
-export const httpLogger = (req, res, next) => {
+export const httpLogger = (req: Request, res: Response, next: NextFunction): void => {
   const start = Date.now();
   const { method, url } = req;
 
@@ -18,14 +19,14 @@ export const httpLogger = (req, res, next) => {
 
   // Capture response body by wrapping res.json and res.send
   const originalJson = res.json.bind(res);
-  res.json = (body) => {
+  res.json = (body: any) => {
     res.locals = res.locals || {};
     res.locals.responseBody = body;
     return originalJson(body);
   };
 
   const originalSend = res.send.bind(res);
-  res.send = (body) => {
+  res.send = (body: any) => {
     res.locals = res.locals || {};
     res.locals.responseBody = body;
     return originalSend(body);

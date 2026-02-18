@@ -80,9 +80,9 @@ if (process.env.NODE_ENV !== 'production') {
   }));
 }
 
-export const getLogger = (moduleUrl, customLabel) => {
+export const getLogger = (moduleUrl?: string, customLabel?: string): winston.Logger => {
   try {
-    const filename = customLabel || path.parse(fileURLToPath(moduleUrl)).name;
+    const filename = customLabel || (moduleUrl ? path.parse(fileURLToPath(moduleUrl)).name : 'app');
     return baseLogger.child({ label: filename });
   } catch {
     // Fallback if moduleUrl is not provided or invalid

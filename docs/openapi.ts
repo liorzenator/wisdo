@@ -29,3 +29,4 @@
  *                 database:
  *                   type: string
  */
+export {};

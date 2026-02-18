@@ -2,7 +2,7 @@ import swaggerJsdoc from 'swagger-jsdoc';
 
 // Use relative server URL to always point to the same origin where the app is served.
 // This avoids CORS and port mismatches between Swagger UI and the API server.
-const options = {
+const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
@@ -18,7 +18,7 @@ const options = {
     ],
   },
   // Centralize OpenAPI docs under /docs to avoid cluttering route files
-  apis: ['./docs/**/*.yaml', './docs/**/*.yml', './docs/**/*.json', './docs/**/*.js'],
+  apis: ['./docs/**/*.yaml', './docs/**/*.yml', './docs/**/*.json', './docs/**/*.js', './docs/**/*.ts'],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
