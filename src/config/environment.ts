@@ -8,6 +8,8 @@ interface EnvVars {
     JWT_REFRESH_SECRET: string;
     JWT_ACCESS_EXPIRATION: string;
     JWT_REFRESH_EXPIRATION: string;
+    REDIS_URL: string;
+    FEED_CACHE_TTL: number
 }
 
 const envSchema = Joi.object<EnvVars>({
@@ -18,6 +20,8 @@ const envSchema = Joi.object<EnvVars>({
     JWT_REFRESH_SECRET: Joi.string().min(32).required(),
     JWT_ACCESS_EXPIRATION: Joi.string().default('15m'),
     JWT_REFRESH_EXPIRATION: Joi.string().default('7d'),
+    REDIS_URL: Joi.string().uri().required(),
+    FEED_CACHE_TTL: Joi.number().default(3600)
 }).unknown(); // allows other env vars
 
 const { error, value } = envSchema.validate(process.env, { abortEarly: false });

@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "npm run build && node dist/index.js",
-    "dev": "tsx index.ts",
+    "dev": "npx tsx src/index.ts",
     "build": "tsc",
     "test": "cross-env mocha",
     "lint": "eslint ."
@@ -23,6 +23,7 @@
     "mongoose": "^9.2.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "redis": "^4.7.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.19.0"

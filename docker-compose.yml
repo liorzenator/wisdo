@@ -11,12 +11,15 @@ services:
       - NODE_ENV=development
       - PORT=${PORT:-3000}
       - DATABASE_URL=mongodb://${DB_USERNAME}:${DB_PASSWORD}@mongodb:27017/${DB_NAME}?authSource=admin
+      - REDIS_URL=redis://redis:6379
     volumes:
       - .:/app
       - /app/node_modules
       - ./logs:/app/logs
+    command: sh -c "npm install && npm run dev"
     depends_on:
       - mongodb
+      - redis
     restart: always
 
   mongodb:
@@ -29,6 +32,12 @@ services:
       - MONGO_INITDB_DATABASE=${DB_NAME}
     volumes:
       - mongodb_data:/data/db
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
     restart: always
 
 volumes:

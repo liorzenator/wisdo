@@ -1,7 +1,7 @@
 import {Types} from 'mongoose';
 import {Book, IBook} from '../models/Book.js';
 import {Library} from '../models/Library.js';
-import {CachedFeed} from '../models/CachedFeed.js';
+import { getUserFeedIds, setUserFeedIds, deleteUserFeed } from '../utils/cache.js';
 import {IUser, User} from "../models/User.js";
 import { DOMAIN_EVENTS, domainEvents } from '../utils/domainEvents.js';
 
@@ -14,12 +14,15 @@ const logger = getLogger(import.meta.url);
 
 export class FeedService {
     async getFeedForUser(limit: number = 10, user: IUser): Promise<IBook[]> {
-        // Try to get from cache first if userId is provided
+        // Try to get from cache (Redis) first if userId is provided
         if (user._id) {
-            const cached = await CachedFeed.findOne({ userId: user._id }).populate('books');
-            if (cached && cached.books.length > 0) {
-                // If we have cached feed, return it (respecting the limit)
-                return (cached.books as unknown as IIBook[]).slice(0, limit);
+            const cachedIds = await getUserFeedIds(user._id);
+            if (cachedIds && cachedIds.length > 0) {
+                const limitedIds = cachedIds.slice(0, limit).map(id => new Types.ObjectId(id));
+                const docs = await Book.find({ _id: { $in: limitedIds } });
+                const map = new Map(docs.map(d => [d._id.toString(), d]));
+                const ordered = limitedIds.map(id => map.get(id.toString())).filter(Boolean) as IBook[];
+                return ordered;
             }
         }
 
@@ -86,13 +89,9 @@ export class FeedService {
             return [];
         }
 
-        // Update cache asynchronously if userId is provided
+        // Update cache asynchronously in Redis if userId is provided
         if (user._id) {
-            CachedFeed.findOneAndUpdate(
-                { userId: user._id },
-                { books: scoredBooks.map(b => b._id) },
-                { upsert: true }
-            ).catch(err => logger.error('Error updating cache:', err));
+            setUserFeedIds(user._id, scoredBooks.map(b => b._id)).catch(err => logger.error('Error updating cache:', err));
         }
 
         return scoredBooks.slice(0, limit);
@@ -101,7 +100,7 @@ export class FeedService {
     async preCalculateFeed(user: IUser) {
         const libraryIds = (user.libraries || []).map(id => new Types.ObjectId(id as any));
         if (libraryIds.length === 0) {
-            await CachedFeed.findOneAndDelete({ userId: user._id });
+            await deleteUserFeed(user._id);
             return;
         }
 
@@ -154,12 +153,12 @@ export class FeedService {
         ]);
 
         if (scoredBooks.length === 0) {
-            await CachedFeed.findOneAndDelete({ userId: user._id });
+            await deleteUserFeed(user._id);
             return;
         }
 
         const result = scoredBooks.map(sb => sb._id);
-        await CachedFeed.findOneAndUpdate({ userId: user._id }, { books: result }, { upsert: true });
+        await setUserFeedIds(user._id, result);
     }
 
     async preCalculateAllFeeds() {

@@ -1,21 +1,22 @@
 import express, { Request, Response } from 'express';
 import 'dotenv/config';
-import env from './src/config/environment.js';
-import connectDatabase from './src/config/database.js';
+import env from './config/environment.js';
+import connectDatabase from './config/database.js';
 import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './src/config/swagger.js';
-import { getLogger } from './src/config/logger.js';
-import { correlationIdMiddleware } from './src/middleware/correlationId.js';
-import { httpLogger } from './src/middleware/httpLogger.js';
+import swaggerSpec from './config/swagger.js';
+import { getLogger } from './config/logger.js';
+import { correlationIdMiddleware } from './middleware/correlationId.js';
+import { httpLogger } from './middleware/httpLogger.js';
 import mongoose from 'mongoose';
-import packageJson from './package.json' with { type: 'json' };
-import { seedDatabase } from './src/utils/seeder.js';
-import bookRoutes from './src/routes/bookRoutes.js';
-import authRoutes from './src/routes/authRoutes.js';
-import feedRoutes from './src/routes/feedRoutes.js';
-import passport from './src/config/passport.js';
-import { errorHandler } from './src/middleware/errorHandler.js';
-import { feedService } from './src/services/feedService.js';
+import { getRedisClient } from './config/redis.js';
+import packageJson from '../package.json' with { type: 'json' };
+import { seedDatabase } from './utils/seeder.js';
+import bookRoutes from './routes/bookRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import feedRoutes from './routes/feedRoutes.js';
+import passport from './config/passport.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { feedService } from './services/feedService.js';
 
 const { version } = packageJson as { version: string };
 
@@ -57,13 +58,25 @@ app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to Wisdo API' });
 });
 
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', async (req: Request, res: Response) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'up' : 'down';
+  
+  let redisStatus = 'down';
+  try {
+    const redisClient = await getRedisClient();
+    if (redisClient && redisClient.isOpen) {
+      redisStatus = 'up';
+    }
+  } catch (err) {
+    // redisStatus stays 'down'
+  }
+
   res.json({
     environment: process.env.NODE_ENV,
     version,
     status: 'ok',
-    database: dbStatus
+    database: dbStatus,
+    redis: redisStatus
   });
 });
 

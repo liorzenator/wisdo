@@ -1,16 +1,17 @@
 # Wisdo API
 
-Wisdo is a robust Node.js and TypeScript-based REST API designed for managing a library of books and providing personalized feeds for users. It features secure authentication, efficient data caching, and comprehensive API documentation.
+Wisdo is a robust Node.js and TypeScript-based REST API designed for managing a library of books and providing personalized feeds for users. It features secure authentication, efficient Redis-based caching, and comprehensive API documentation.
 
 ## Features
 
 - **Authentication & Authorization**: Secure JWT-based authentication with access and refresh tokens.
 - **Library Management**: Manage libraries and books with detailed information.
-- **Personalized Feed**: A curated feed of books for users, with server-side caching for improved performance.
+- **Personalized Feed**: A curated feed of books for users, with server-side caching (Redis) for improved performance.
 - **Database Seeding**: Automatic database population with realistic data using Faker for development and testing.
 - **API Documentation**: Interactive Swagger UI for easy API exploration and testing.
 - **Containerization**: Full Docker and Docker Compose support for consistent development and deployment environments.
 - **Logging**: Integrated logging system using Winston for better traceability.
+- **Health Checks**: Comprehensive health check endpoint at `/health` monitors database and Redis status.
 
 ## Technologies Used
 
@@ -18,15 +19,18 @@ Wisdo is a robust Node.js and TypeScript-based REST API designed for managing a 
 - **Language**: TypeScript
 - **Framework**: Express.js
 - **Database**: MongoDB with Mongoose ODM
+- **Cache**: Redis
 - **Security**: Passport.js, JWT, Bcrypt
 - **Documentation**: Swagger UI, OpenAPI 3.0
 - **Testing**: Mocha, Chai, Sinon, Supertest
 - **Containerization**: Docker, Docker Compose
+- **Logging**: Winston
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v20 or higher)
 - [MongoDB](https://www.mongodb.com/) (if running locally)
+- [Redis](https://redis.io/) (if running locally)
 - [Docker](https://www.docker.com/) (optional, for containerized execution)
 
 ## Installation & Setup
@@ -48,6 +52,8 @@ Wisdo is a robust Node.js and TypeScript-based REST API designed for managing a 
    PORT=3000
    NODE_ENV=development
    DATABASE_URL=mongodb://root:password@localhost:27017/wisdo?authSource=admin
+   REDIS_URL=redis://localhost:6379
+   FEED_CACHE_TTL=3600
    JWT_SECRET=your_32_character_secret_key_here
    JWT_REFRESH_SECRET=your_32_character_refresh_secret_key_here
    JWT_ACCESS_EXPIRATION=15m
@@ -61,7 +67,18 @@ Wisdo is a robust Node.js and TypeScript-based REST API designed for managing a 
 
 ## Running the Application
 
-### Locally
+### Using Docker (Recommended)
+
+**Start the entire stack (API + MongoDB + Redis):**
+```bash
+docker-compose up --build
+```
+
+The API will be available at `http://localhost:3000`.
+
+### Running Locally (Manual Setup)
+
+If you prefer to run the components individually without Docker:
 
 **Development Mode (with auto-reload):**
 ```bash
@@ -74,14 +91,10 @@ npm run build
 npm start
 ```
 
-### Using Docker
+## Health Check
 
-**Start the entire stack (API + MongoDB):**
-```bash
-docker-compose up --build
-```
-
-The API will be available at `http://localhost:3000`.
+You can verify the status of the API and its dependencies (MongoDB, Redis) at:
+`http://localhost:3000/health`
 
 ## API Documentation
 

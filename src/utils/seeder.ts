@@ -1,7 +1,6 @@
 import { User } from '../models/User.js';
 import { Library } from '../models/Library.js';
 import { Book } from '../models/Book.js';
-import { CachedFeed } from '../models/CachedFeed.js';
 import { getLogger } from '../config/logger.js';
 import { faker } from '@faker-js/faker';
 
@@ -15,8 +14,7 @@ export const seedDatabase = async () => {
         await Promise.all([
             User.deleteMany({}),
             Library.deleteMany({}),
-            Book.deleteMany({}),
-            CachedFeed.deleteMany({})
+            Book.deleteMany({})
         ]);
 
         logger.info('Database cleared.');
