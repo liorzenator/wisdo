@@ -17,10 +17,19 @@ const options: swaggerJsdoc.Options = {
       },
     ],
   },
-  // Centralize OpenAPI docs under /docs to avoid cluttering route files
-  apis: ['./docs/**/*.yaml', './docs/**/*.yml', './docs/**/*.json', './docs/**/*.js', './docs/**/*.ts'],
+  // Centralize OpenAPI docs under /docs and include routes
+  apis: [
+    './docs/**/*.yaml',
+    './docs/**/*.yml',
+    './docs/**/*.json',
+    './docs/**/*.js',
+    './docs/**/*.ts',
+    './src/routes/*.ts',
+    './src/routes/*.js'
+  ],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
 
+export { options as defaultOptions };
 export default swaggerSpec;
