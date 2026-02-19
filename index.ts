@@ -12,6 +12,7 @@ import packageJson from './package.json' with { type: 'json' };
 import { seedDatabase } from './src/utils/seeder.js';
 import bookRoutes from './src/routes/bookRoutes.js';
 import authRoutes from './src/routes/authRoutes.js';
+import feedRoutes from './src/routes/feedRoutes.js';
 import passport from './src/config/passport.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 
@@ -22,7 +23,9 @@ const app = express();
 
 // Connect to database
 connectDatabase().then(async () => {
-    await seedDatabase();
+    if (env.NODE_ENV !== 'production') {
+        await seedDatabase();
+    }
 });
 
 const port = env.PORT;
@@ -34,6 +37,7 @@ app.use(passport.initialize());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
+app.use('/feed', feedRoutes);
 
 // Swagger documentation
 if (env.NODE_ENV !== 'production') {

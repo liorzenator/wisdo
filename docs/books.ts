@@ -14,6 +14,7 @@
  *         - author
  *         - publishedDate
  *         - pages
+ *         - authorCountry
  *         - library
  *       properties:
  *         id:
@@ -28,6 +29,8 @@
  *           format: date
  *         pages:
  *           type: number
+ *         authorCountry:
+ *           type: string
  *         library:
  *           type: string
  *           description: ID of the library

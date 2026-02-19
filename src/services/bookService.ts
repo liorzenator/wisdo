@@ -27,10 +27,10 @@ export class BookService {
 
     // High-level, user-aware operations moved from controller
     async createForUser(userLibraryIds: (Types.ObjectId | string)[], data: Partial<IBook>): Promise<IBook> {
-        const { title, author, publishedDate, pages, library } = data as any;
+        const { title, author, publishedDate, pages, authorCountry, library } = data as any;
 
-        if (!title || !author || !library) {
-            throw new ServiceError(400, 'Title, author, and library are required');
+        if (!title || !author || !library || !authorCountry) {
+            throw new ServiceError(400, 'Title, author, authorCountry, and library are required');
         }
         if (pages !== undefined && pages <= 0) {
             throw new ServiceError(400, 'Pages must be greater than 0');
@@ -47,6 +47,7 @@ export class BookService {
             author,
             publishedDate: publishedDate ? new Date(publishedDate as any) : new Date(),
             pages,
+            authorCountry,
             library: libId
         } as Partial<IBook>);
     }

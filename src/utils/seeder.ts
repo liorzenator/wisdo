@@ -1,76 +1,88 @@
 import { User } from '../models/User.js';
 import { Library } from '../models/Library.js';
 import { Book } from '../models/Book.js';
+import { CachedFeed } from '../models/CachedFeed.js';
 import { getLogger } from '../../logger.js';
+import { faker } from '@faker-js/faker';
 
 const logger = getLogger(import.meta.url);
 
 export const seedDatabase = async () => {
     try {
-        const userCount = await User.countDocuments();
-        const libraryCount = await Library.countDocuments();
+        logger.info('Resetting and seeding database with faker data...');
 
-        if (userCount > 0 || libraryCount > 0) {
-            logger.info('Database already seeded, skipping...');
-            return;
+        // Clear existing data
+        await Promise.all([
+            User.deleteMany({}),
+            Library.deleteMany({}),
+            Book.deleteMany({}),
+            CachedFeed.deleteMany({})
+        ]);
+
+        logger.info('Database cleared.');
+
+        // Create 10 Libraries
+        const libraries = [];
+        for (let i = 0; i < 10; i++) {
+            const library = await Library.create({
+                name: faker.company.name() + ' Library',
+                location: faker.location.city()
+            });
+            libraries.push(library);
         }
 
-        logger.info('Seeding database with sample data...');
+        logger.info('Libraries created.');
 
-        // Create Libraries
-        const library1 = await Library.create({
-            name: 'Central Library',
-            location: 'Downtown'
-        });
-
-        const library2 = await Library.create({
-            name: 'Westside Library',
-            location: 'West End'
-        });
-
-        // Create Users
-        const user1 = await User.create({
-            username: 'johndoe',
-            password: 'password123',
-            country: 'USA',
-            libraries: [library1._id],
-            role: 'user'
-        });
-
-        const user2 = await User.create({
-            username: 'janedoe',
-            password: 'password123',
-            country: 'UK',
-            libraries: [library2._id],
-            role: 'user'
-        });
-
-        const admin = await User.create({
+        // Create a hardcoded admin user
+        const allLibraryIds = libraries.map(lib => lib._id);
+        const hardcodedAdmin = await User.create({
             username: 'admin',
-            password: 'adminpassword',
-            country: 'Global',
-            libraries: [library1._id, library2._id],
+            password: 'adminpassword123',
+            country: 'USA',
+            libraries: allLibraryIds,
             role: 'admin'
         });
+        
+        logger.info(`Hardcoded admin user created: ${hardcodedAdmin.username}`);
 
-        // Create some sample Books
-        await Book.create({
-            title: 'The Great Gatsby',
-            author: 'F. Scott Fitzgerald',
-            publishedDate: new Date('1925-04-10'),
-            pages: 180,
-            library: library1._id
-        });
+        // Create 4 additional Users with different roles and link them to random libraries
+        const roles: ('admin' | 'user')[] = ['user', 'user', 'user', 'user'];
+        const users = [hardcodedAdmin];
+        for (let i = 0; i < 4; i++) {
+            const role = roles[i];
+            const numLibraries = faker.number.int({ min: 1, max: 3 });
+            const selectedLibraries = role === 'admin' 
+                ? allLibraryIds 
+                : faker.helpers.arrayElements(libraries, numLibraries).map(lib => lib._id);
+            
+            const user = await User.create({
+                username: faker.internet.username(),
+                password: 'password123',
+                country: faker.location.country(),
+                libraries: selectedLibraries,
+                role: role
+            });
+            users.push(user);
+        }
 
-        await Book.create({
-            title: '1984',
-            author: 'George Orwell',
-            publishedDate: new Date('1949-06-08'),
-            pages: 328,
-            library: library2._id
-        });
+        // Create 1000 Books distributed among the 10 libraries
+        const booksData = [];
+        for (let i = 0; i < 1000; i++) {
+            const library = faker.helpers.arrayElement(libraries);
+            booksData.push({
+                title: faker.book.title(),
+                author: faker.book.author(),
+                publishedDate: faker.date.past({ years: 50 }),
+                pages: faker.number.int({ min: 50, max: 1000 }),
+                authorCountry: faker.location.country(),
+                library: library._id
+            });
+        }
 
-        logger.info('Database seeded successfully.');
+        // Use insertMany for efficiency
+        await Book.insertMany(booksData);
+
+        logger.info('Database seeded successfully with 10 libraries, 5 users, and 1000 books.');
     } catch (error) {
         logger.error('Error seeding database:', error);
     }
