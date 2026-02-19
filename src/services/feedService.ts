@@ -9,7 +9,7 @@ interface IIBook extends IBook {
     _id: Types.ObjectId;
 }
 
-import { getLogger } from '../../logger.js';
+import { getLogger } from '../config/logger.js';
 const logger = getLogger(import.meta.url);
 
 export class FeedService {

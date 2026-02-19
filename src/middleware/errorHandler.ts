@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { getLogger } from '../../logger.js';
+import { getLogger } from '../config/logger.js';
 import { ServiceError } from '../errors/ServiceError.js';
 import mongoose from 'mongoose';
 

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { getLogger } from '../../logger.js';
+import { getLogger } from '../config/logger.js';
 
 const logger = getLogger(import.meta.url, 'http');
 const blacklist = [

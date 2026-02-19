@@ -4,7 +4,7 @@ import env from './src/config/environment.js';
 import connectDatabase from './src/config/database.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './src/config/swagger.js';
-import { getLogger } from './logger.js';
+import { getLogger } from './src/config/logger.js';
 import { correlationIdMiddleware } from './src/middleware/correlationId.js';
 import { httpLogger } from './src/middleware/httpLogger.js';
 import mongoose from 'mongoose';

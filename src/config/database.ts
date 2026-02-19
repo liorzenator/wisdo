@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import env from './environment.js';
-import { getLogger } from '../../logger.js';
+import { getLogger } from './logger.js';
 
 const logger = getLogger(import.meta.url);
 
