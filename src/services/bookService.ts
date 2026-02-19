@@ -27,6 +27,15 @@ export class BookService {
         return Book.findByIdAndDelete(id);
     }
 
+    private checkLibraryAccess(user: IUser, libraryId: Types.ObjectId | string, errorMessage: string = 'User is not a member of the library'): void {
+        if (user.role === 'admin') return;
+
+        const userLibs = (user.libraries || []).map(l => l.toString());
+        if (!userLibs.includes(libraryId.toString())) {
+            throw new ServiceError(403, errorMessage);
+        }
+    }
+
     // High-level, user-aware operations moved from controller
     async createForUser(user: IUser, data: Partial<IBook>): Promise<IBook> {
         const { title, author, publishedDate, pages, authorCountry, library } = data as any;
@@ -44,12 +53,7 @@ export class BookService {
             throw new ServiceError(404, 'Library not found');
         }
 
-        if (user.role !== 'admin') {
-            const userLibs = (user.libraries || []).map(l => l.toString());
-            if (!userLibs.includes(libId.toString())) {
-                throw new ServiceError(403, 'User is not a member of the library');
-            }
-        }
+        this.checkLibraryAccess(user, libId);
 
         const book = await this.createBook({
             title,
@@ -78,12 +82,7 @@ export class BookService {
             throw new ServiceError(404, 'Book not found');
         }
 
-        if (user.role !== 'admin') {
-            const userLibs = (user.libraries || []).map(l => l.toString());
-            if (!userLibs.includes(book.library.toString())) {
-                throw new ServiceError(403, 'User is not a member of the library');
-            }
-        }
+        this.checkLibraryAccess(user, book.library);
 
         return book;
     }
@@ -94,12 +93,7 @@ export class BookService {
             throw new ServiceError(404, 'Book not found');
         }
 
-        if (user.role !== 'admin') {
-            const userLibs = (user.libraries || []).map(l => l.toString());
-            if (!userLibs.includes(existing.library.toString())) {
-                throw new ServiceError(403, 'User is not a member of the library');
-            }
-        }
+        this.checkLibraryAccess(user, existing.library);
 
         const { pages, library, publishedDate } = data as any;
         if (pages !== undefined && pages <= 0) {
@@ -113,12 +107,7 @@ export class BookService {
                 throw new ServiceError(404, 'Library not found');
             }
 
-            if (user.role !== 'admin') {
-                const userLibs = (user.libraries || []).map(l => l.toString());
-                if (!userLibs.includes(newLibId.toString())) {
-                    throw new ServiceError(403, 'User is not a member of the new library');
-                }
-            }
+            this.checkLibraryAccess(user, newLibId, 'User is not a member of the new library');
             newLib = newLibId;
         }
 
@@ -142,12 +131,7 @@ export class BookService {
             throw new ServiceError(404, 'Book not found');
         }
 
-        if (user.role !== 'admin') {
-            const userLibs = (user.libraries || []).map(l => l.toString());
-            if (!userLibs.includes(existing.library.toString())) {
-                throw new ServiceError(403, 'User is not a member of the library');
-            }
-        }
+        this.checkLibraryAccess(user, existing.library);
         await this.deleteBook(id);
     }
 }
