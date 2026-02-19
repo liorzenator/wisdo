@@ -1,5 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
-import { feedService } from '../services/feedService.js';
+import { DOMAIN_EVENTS, domainEvents } from '../utils/domainEvents.js';
 
 export interface IBook extends Document {
     _id: Types.ObjectId;
@@ -26,16 +26,12 @@ const bookSchema = new Schema<IBook>({
 });
 
 export const bookPostSaveHook = function(doc: IBook) {
-    feedService.refreshFeedForUsersInLibrary(doc.library).catch(err => {
-        console.error('Error refreshing feed after book save:', err);
-    });
+    domainEvents.emit(DOMAIN_EVENTS.BOOK_CREATED, doc.library);
 };
 
 export const bookPostFindOneAndDeleteHook = function(doc: IBook | null) {
     if (doc) {
-        feedService.refreshFeedForUsersInLibrary(doc.library).catch(err => {
-            console.error('Error refreshing feed after book deletion:', err);
-        });
+        domainEvents.emit(DOMAIN_EVENTS.BOOK_DELETED, doc.library);
     }
 };
 

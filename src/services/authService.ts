@@ -40,7 +40,7 @@ export class AuthService {
         const tokens = await this.generateTokens(user._id.toString(), user.username, user.role);
         
         // Save refresh token to user
-        user.refreshTokens.push(tokens.refreshToken);
+        user.refreshTokens.push({ token: tokens.refreshToken });
         await user.save();
 
         return tokens;
@@ -55,16 +55,44 @@ export class AuthService {
             const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as any;
             const user = await User.findById(decoded.id);
 
-            if (!user || !user.refreshTokens.includes(refreshToken)) {
+            if (!user) {
                 throw new ServiceError(401, 'Invalid refresh token');
             }
 
-            // Remove old refresh token and generate new ones
-            user.refreshTokens = user.refreshTokens.filter(t => t !== refreshToken);
-            
+            const tokenData = user.refreshTokens.find(t => t.token === refreshToken);
+
+            // Token reuse detection
+            if (!tokenData) {
+                // If the token is not found, but it was previously used (replacedBy exists), 
+                // it might be a malicious reuse attempt.
+                // We should check if this token was ever in the list but was replaced.
+                // Since we store replacedBy, we can find it.
+                // Wait, if it was already used and replaced, it SHOULD still be in the list if we don't remove it.
+                // Let's refine: if we find the token and it has replacedBy, it's reuse.
+                // If we don't find it at all, it's either invalid or we already purged it.
+                throw new ServiceError(401, 'Invalid refresh token');
+            }
+
+            if (tokenData.replacedBy) {
+                // TOKEN REUSE DETECTED!
+                // Invalidate all tokens for this user for security
+                user.refreshTokens = [];
+                await user.save();
+                throw new ServiceError(401, 'Refresh token reuse detected. All sessions invalidated.');
+            }
+
+            // Generate new ones
             const tokens = await this.generateTokens(user._id.toString(), user.username, user.role);
             
-            user.refreshTokens.push(tokens.refreshToken);
+            // Mark old token as replaced and add new one
+            tokenData.replacedBy = tokens.refreshToken;
+            user.refreshTokens.push({ token: tokens.refreshToken });
+            
+            // Optional: Limit the number of refresh tokens (e.g., keep only last 10)
+            if (user.refreshTokens.length > 50) {
+                user.refreshTokens.shift();
+            }
+
             await user.save();
 
             return tokens;

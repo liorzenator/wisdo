@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { User, userPostSaveHook } from '../src/models/User.js';
 import { bookPostSaveHook, bookPostFindOneAndDeleteHook } from '../src/models/Book.js';
 import { libraryPostFindOneAndUpdateHook, libraryPostFindOneAndDeleteHook } from '../src/models/Library.js';
+import { DOMAIN_EVENTS, domainEvents } from '../src/utils/domainEvents.js';
 import { feedService } from '../src/services/feedService.js';
 
 describe('Feed Refresh Logic', () => {
@@ -18,46 +19,46 @@ describe('Feed Refresh Logic', () => {
     });
 
     describe('Model Hooks', () => {
-        it('Book post-save hook should trigger feed refresh', async () => {
+        it('Book post-save hook should emit BOOK_CREATED event', async () => {
             const libraryId = new mongoose.Types.ObjectId();
             const book = { library: libraryId } as any;
-            const refreshStub = sinon.stub(feedService, 'refreshFeedForUsersInLibrary').resolves();
+            const emitSpy = sinon.spy(domainEvents, 'emit');
             bookPostSaveHook(book as any);
-            expect(refreshStub.calledOnceWith(libraryId)).to.be.true;
+            expect(emitSpy.calledWith(DOMAIN_EVENTS.BOOK_CREATED, libraryId)).to.be.true;
         });
 
-        it('Book post-findOneAndDelete hook should trigger feed refresh', async () => {
+        it('Book post-findOneAndDelete hook should emit BOOK_DELETED event', async () => {
             const libraryId = new mongoose.Types.ObjectId();
             const book = { library: libraryId } as any;
-            const refreshStub = sinon.stub(feedService, 'refreshFeedForUsersInLibrary').resolves();
+            const emitSpy = sinon.spy(domainEvents, 'emit');
             bookPostFindOneAndDeleteHook(book as any);
-            expect(refreshStub.calledOnceWith(libraryId)).to.be.true;
+            expect(emitSpy.calledWith(DOMAIN_EVENTS.BOOK_DELETED, libraryId)).to.be.true;
         });
 
-        it('User post-save hook should trigger feed refresh when libraries modified', async () => {
+        it('User post-save hook should emit USER_LIBRARIES_UPDATED event when libraries modified', async () => {
             const userId = new mongoose.Types.ObjectId();
             const userDoc: any = { _id: userId };
-            const refreshStub = sinon.stub(feedService, 'refreshFeedForUser').resolves();
+            const emitSpy = sinon.spy(domainEvents, 'emit');
             // Simulate 'this' with modifiedPaths returning ['libraries']
             const thisCtx = { modifiedPaths: () => ['libraries'] } as any;
             userPostSaveHook.call(thisCtx, userDoc);
-            expect(refreshStub.calledOnceWith(userId)).to.be.true;
+            expect(emitSpy.calledWith(DOMAIN_EVENTS.USER_LIBRARIES_UPDATED, userId)).to.be.true;
         });
 
-        it('Library post-findOneAndUpdate hook should trigger feed refresh', async () => {
+        it('Library post-findOneAndUpdate hook should emit LIBRARY_UPDATED event', async () => {
             const libraryId = new mongoose.Types.ObjectId();
             const lib = { _id: libraryId } as any;
-            const refreshStub = sinon.stub(feedService, 'refreshFeedForUsersInLibrary').resolves();
+            const emitSpy = sinon.spy(domainEvents, 'emit');
             libraryPostFindOneAndUpdateHook(lib as any);
-            expect(refreshStub.calledOnceWith(libraryId)).to.be.true;
+            expect(emitSpy.calledWith(DOMAIN_EVENTS.LIBRARY_UPDATED, libraryId)).to.be.true;
         });
 
-        it('Library post-findOneAndDelete hook should trigger feed refresh', async () => {
+        it('Library post-findOneAndDelete hook should emit LIBRARY_DELETED event', async () => {
             const libraryId = new mongoose.Types.ObjectId();
             const lib = { _id: libraryId } as any;
-            const refreshStub = sinon.stub(feedService, 'refreshFeedForUsersInLibrary').resolves();
+            const emitSpy = sinon.spy(domainEvents, 'emit');
             libraryPostFindOneAndDeleteHook(lib as any);
-            expect(refreshStub.calledOnceWith(libraryId)).to.be.true;
+            expect(emitSpy.calledWith(DOMAIN_EVENTS.LIBRARY_DELETED, libraryId)).to.be.true;
         });
     });
 

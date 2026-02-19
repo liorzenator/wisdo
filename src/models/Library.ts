@@ -1,5 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
-import { feedService } from '../services/feedService.js';
+import { DOMAIN_EVENTS, domainEvents } from '../utils/domainEvents.js';
 
 export interface ILibrary extends Document {
     _id: Types.ObjectId;
@@ -19,17 +19,13 @@ const librarySchema = new Schema<ILibrary>({
 
 export const libraryPostFindOneAndUpdateHook = function(doc: ILibrary | null) {
     if (doc) {
-        feedService.refreshFeedForUsersInLibrary(doc._id).catch(err => {
-            console.error('Error refreshing feed after library update:', err);
-        });
+        domainEvents.emit(DOMAIN_EVENTS.LIBRARY_UPDATED, doc._id);
     }
 };
 
 export const libraryPostFindOneAndDeleteHook = function(doc: ILibrary | null) {
     if (doc) {
-        feedService.refreshFeedForUsersInLibrary(doc._id).catch(err => {
-            console.error('Error refreshing feed after library deletion:', err);
-        });
+        domainEvents.emit(DOMAIN_EVENTS.LIBRARY_DELETED, doc._id);
     }
 };
 

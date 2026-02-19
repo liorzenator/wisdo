@@ -1,6 +1,6 @@
 import { Schema, model, Document, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { feedService } from '../services/feedService.js';
+import { DOMAIN_EVENTS, domainEvents } from '../utils/domainEvents.js';
 
 export interface IUser extends Document {
     _id: Types.ObjectId;
@@ -10,7 +10,7 @@ export interface IUser extends Document {
     country: string;
     libraries: Types.ObjectId[];
     role?: 'admin' | 'user';
-    refreshTokens: string[];
+    refreshTokens: { token: string, replacedBy?: string }[];
     comparePassword(password: string): Promise<boolean>;
 }
 
@@ -20,7 +20,10 @@ const userSchema = new Schema<IUser>({
     country: { type: String, required: true },
     libraries: [{ type: Schema.Types.ObjectId, ref: 'Library' }],
     role: { type: String, enum: ['admin', 'user'], default: 'user' },
-    refreshTokens: [{ type: String }]
+    refreshTokens: [{ 
+        token: { type: String },
+        replacedBy: { type: String }
+    }]
 }, {
     timestamps: true,
     toJSON: { virtuals: true },
@@ -45,9 +48,7 @@ export const userPostSaveHook = function(this: any, doc: IUser) {
     // Only refresh if libraries were modified.
     const modified = typeof this.modifiedPaths === 'function' ? this.modifiedPaths() : [];
     if (Array.isArray(modified) && modified.includes('libraries')) {
-        feedService.refreshFeedForUser(doc._id).catch((err: any) => {
-            console.error('Error refreshing feed after user library change:', err);
-        });
+        domainEvents.emit(DOMAIN_EVENTS.USER_LIBRARIES_UPDATED, doc._id);
     }
 };
 

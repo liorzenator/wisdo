@@ -1,6 +1,7 @@
 import { Book, IBook } from '../models/Book.js';
 import { ServiceError } from "../errors/ServiceError.js";
 import { Types } from 'mongoose';
+import { IUser } from '../models/User.js';
 
 export class BookService {
     // Low-level CRUD (kept for internal reuse/tests)
@@ -26,7 +27,7 @@ export class BookService {
     }
 
     // High-level, user-aware operations moved from controller
-    async createForUser(userLibraryIds: (Types.ObjectId | string)[], data: Partial<IBook>): Promise<IBook> {
+    async createForUser(user: IUser, data: Partial<IBook>): Promise<IBook> {
         const { title, author, publishedDate, pages, authorCountry, library } = data as any;
 
         if (!title || !author || !library || !authorCountry) {
@@ -37,9 +38,11 @@ export class BookService {
         }
 
         const libId = new Types.ObjectId(library as any);
-        const userLibs = (userLibraryIds || []).map(l => l.toString());
-        if (!userLibs.includes(libId.toString())) {
-            throw new ServiceError(403, 'User is not a member of the library');
+        if (user.role !== 'admin') {
+            const userLibs = (user.libraries || []).map(l => l.toString());
+            if (!userLibs.includes(libId.toString())) {
+                throw new ServiceError(403, 'User is not a member of the library');
+            }
         }
 
         const book = await this.createBook({
@@ -54,35 +57,42 @@ export class BookService {
         return book;
     }
 
-    async listForUser(userLibraryIds: (Types.ObjectId | string)[]): Promise<IBook[]> {
-        const ids = (userLibraryIds || []).map(id => new Types.ObjectId(id as any));
+    async listForUser(user: IUser): Promise<IBook[]> {
+        if (user.role === 'admin') {
+            return Book.find({});
+        }
+        const ids = (user.libraries || []).map(id => new Types.ObjectId(id as any));
         return this.getBooksByLibraryIds(ids as Types.ObjectId[]);
     }
 
-    async getByIdForUser(userLibraryIds: (Types.ObjectId | string)[], id: string): Promise<IBook> {
+    async getByIdForUser(user: IUser, id: string): Promise<IBook> {
         const book = await this.getBookById(id);
 
         if (!book) {
             throw new ServiceError(404, 'Book not found');
         }
 
-        const userLibs = (userLibraryIds || []).map(l => l.toString());
-
-        if (!userLibs.includes(book.library.toString())) {
-            throw new ServiceError(403, 'User is not a member of the library');
+        if (user.role !== 'admin') {
+            const userLibs = (user.libraries || []).map(l => l.toString());
+            if (!userLibs.includes(book.library.toString())) {
+                throw new ServiceError(403, 'User is not a member of the library');
+            }
         }
 
         return book;
     }
 
-    async updateForUser(userLibraryIds: (Types.ObjectId | string)[], id: string, data: Partial<IBook>): Promise<IBook> {
+    async updateForUser(user: IUser, id: string, data: Partial<IBook>): Promise<IBook> {
         const existing = await this.getBookById(id);
         if (!existing) {
             throw new ServiceError(404, 'Book not found');
         }
-        const userLibs = (userLibraryIds || []).map(l => l.toString());
-        if (!userLibs.includes(existing.library.toString())) {
-            throw new ServiceError(403, 'User is not a member of the library');
+
+        if (user.role !== 'admin') {
+            const userLibs = (user.libraries || []).map(l => l.toString());
+            if (!userLibs.includes(existing.library.toString())) {
+                throw new ServiceError(403, 'User is not a member of the library');
+            }
         }
 
         const { pages, library, publishedDate } = data as any;
@@ -92,8 +102,11 @@ export class BookService {
         let newLib: Types.ObjectId | undefined = undefined;
         if (library) {
             const newLibId = new Types.ObjectId(library as any);
-            if (!userLibs.includes(newLibId.toString())) {
-                throw new ServiceError(403, 'User is not a member of the new library');
+            if (user.role !== 'admin') {
+                const userLibs = (user.libraries || []).map(l => l.toString());
+                if (!userLibs.includes(newLibId.toString())) {
+                    throw new ServiceError(403, 'User is not a member of the new library');
+                }
             }
             newLib = newLibId;
         }
@@ -112,14 +125,17 @@ export class BookService {
         return updated!;
     }
 
-    async deleteForUser(userLibraryIds: (Types.ObjectId | string)[], id: string): Promise<void> {
+    async deleteForUser(user: IUser, id: string): Promise<void> {
         const existing = await this.getBookById(id);
         if (!existing) {
             throw new ServiceError(404, 'Book not found');
         }
-        const userLibs = (userLibraryIds || []).map(l => l.toString());
-        if (!userLibs.includes(existing.library.toString())) {
-            throw new ServiceError(403, 'User is not a member of the library');
+
+        if (user.role !== 'admin') {
+            const userLibs = (user.libraries || []).map(l => l.toString());
+            if (!userLibs.includes(existing.library.toString())) {
+                throw new ServiceError(403, 'User is not a member of the library');
+            }
         }
         await this.deleteBook(id);
     }

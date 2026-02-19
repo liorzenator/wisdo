@@ -48,7 +48,7 @@ describe('BookController', () => {
 
             await bookController.create(req as any, res as any);
 
-            expect(createStub.calledWith(req.user!.libraries, bookData)).to.be.true;
+            expect(createStub.calledWith(req.user, bookData)).to.be.true;
             expect(statusStub.calledWith(201)).to.be.true;
             expect(jsonSpy.calledWith(createdBook)).to.be.true;
         });
@@ -79,7 +79,7 @@ describe('BookController', () => {
 
             await bookController.getById(req as any, res as any);
 
-            expect(getByIdStub.calledWith(req.user!.libraries, bookId)).to.be.true;
+            expect(getByIdStub.calledWith(req.user, bookId)).to.be.true;
             expect(jsonSpy.calledWith(mockBook)).to.be.true;
         });
 
@@ -101,7 +101,7 @@ describe('BookController', () => {
 
             await bookController.delete(req as any, res as any);
 
-            expect(deleteStub.calledWith(req.user!.libraries, bookId)).to.be.true;
+            expect(deleteStub.calledWith(req.user, bookId)).to.be.true;
             expect(statusStub.calledWith(204)).to.be.true;
             expect(sendSpy.calledOnce).to.be.true;
         });

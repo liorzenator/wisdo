@@ -1,17 +1,16 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.js';
 import { bookService } from '../services/bookService.js';
+import { IUser } from '../models/User.js';
 
 export class BookController {
     async create(req: AuthRequest, res: Response) {
-        const userLibraries = req.user?.libraries || [];
-        const book = await bookService.createForUser(userLibraries, req.body);
+        const book = await bookService.createForUser(req.user as IUser, req.body);
         res.status(201).json(book);
     }
 
     async getAll(req: AuthRequest, res: Response) {
-        const userLibraries = req.user?.libraries || [];
-        const books = await bookService.listForUser(userLibraries);
+        const books = await bookService.listForUser(req.user as IUser);
         res.json(books);
     }
 
@@ -20,8 +19,7 @@ export class BookController {
         if (typeof id !== 'string') {
             return res.status(400).json({ error: 'Invalid book ID' });
         }
-        const userLibraries = req.user?.libraries || [];
-        const book = await bookService.getByIdForUser(userLibraries, id);
+        const book = await bookService.getByIdForUser(req.user as IUser, id);
         res.json(book);
     }
 
@@ -30,8 +28,7 @@ export class BookController {
         if (typeof id !== 'string') {
             return res.status(400).json({ error: 'Invalid book ID' });
         }
-        const userLibraries = req.user?.libraries || [];
-        const updatedBook = await bookService.updateForUser(userLibraries, id, req.body);
+        const updatedBook = await bookService.updateForUser(req.user as IUser, id, req.body);
         res.json(updatedBook);
     }
 
@@ -40,8 +37,7 @@ export class BookController {
         if (typeof id !== 'string') {
             return res.status(400).json({ error: 'Invalid book ID' });
         }
-        const userLibraries = req.user?.libraries || [];
-        await bookService.deleteForUser(userLibraries, id);
+        await bookService.deleteForUser(req.user as IUser, id);
         res.status(204).send();
     }
 }

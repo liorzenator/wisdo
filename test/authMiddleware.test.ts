@@ -23,29 +23,24 @@ describe('authMiddleware', () => {
         sinon.restore();
     });
 
-    it('should populate libraries for admin users', async () => {
+    it('should pass admin users without populating libraries', async () => {
         const mockAdmin = {
             _id: new mongoose.Types.ObjectId(),
             role: 'admin',
             libraries: []
         };
 
-        const mockLibraries = [
-            { _id: new mongoose.Types.ObjectId() },
-            { _id: new mongoose.Types.ObjectId() }
-        ];
-
         sinon.stub(passport, 'authenticate').returns(((req: any, res: any, next: any) => {
             const callback = (passport.authenticate as any).getCall(0).args[2];
             callback(null, mockAdmin, null);
         }) as any);
 
-        const libraryFindStub = sinon.stub(Library, 'find').resolves(mockLibraries as any);
+        const libraryFindSpy = sinon.spy(Library, 'find');
 
         await authMiddleware(req, res, next);
 
-        expect(mockAdmin.libraries).to.have.lengthOf(2);
-        expect(mockAdmin.libraries).to.deep.equal(mockLibraries.map(l => l._id));
+        expect(mockAdmin.libraries).to.have.lengthOf(0);
+        expect(libraryFindSpy.called).to.be.false;
         expect(req.user).to.equal(mockAdmin);
         expect(next.calledOnce).to.be.true;
     });
