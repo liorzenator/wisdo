@@ -1,7 +1,7 @@
 import {Types} from 'mongoose';
 import {Book, IBook} from '../models/Book.js';
 import {CachedFeed} from '../models/CachedFeed.js';
-import {IUser} from "../models/User.js";
+import {IUser, User} from "../models/User.js";
 
 interface IIBook extends IBook {
     _id: Types.ObjectId;
@@ -68,7 +68,10 @@ export class FeedService {
 
     async preCalculateFeed(user: IUser) {
         const books = await Book.find({library: {$in: user.libraries}});
-        if (books.length === 0) return;
+        if (books.length === 0) {
+            await CachedFeed.findOneAndDelete({userId: user._id});
+            return;
+        }
 
         const scoredBooks = this.getScoredBooks(books, user.country)
 
@@ -78,7 +81,26 @@ export class FeedService {
         });
 
         const result = scoredBooks.slice(0, 100).map(sb => sb.book._id);
-        await CachedFeed.findOneAndUpdate({userId: user.id}, {books: result}, {upsert: true});
+        await CachedFeed.findOneAndUpdate({userId: user._id}, {books: result}, {upsert: true});
+    }
+
+    async preCalculateAllFeeds() {
+        const users = await User.find({});
+        const promises = users.map(user => this.preCalculateFeed(user));
+        await Promise.all(promises);
+    }
+
+    async refreshFeedForUsersInLibrary(libraryId: string | Types.ObjectId) {
+        const users = await User.find({libraries: libraryId});
+        const promises = users.map(user => this.preCalculateFeed(user));
+        await Promise.all(promises);
+    }
+
+    async refreshFeedForUser(userId: string | Types.ObjectId) {
+        const user = await User.findById(userId);
+        if (user) {
+            await this.preCalculateFeed(user);
+        }
     }
 }
 

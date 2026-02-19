@@ -1,5 +1,6 @@
 import { Schema, model, Document, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { feedService } from '../services/feedService.js';
 
 export interface IUser extends Document {
     _id: Types.ObjectId;
@@ -22,7 +23,6 @@ const userSchema = new Schema<IUser>({
     refreshTokens: [{ type: String }]
 }, {
     timestamps: true,
-    strict: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
@@ -40,5 +40,19 @@ userSchema.pre('save', async function() {
 userSchema.methods.comparePassword = async function(password: string): Promise<boolean> {
     return bcrypt.compare(password, this.password);
 };
+
+export const userPostSaveHook = function(this: any, doc: IUser) {
+    // Only refresh if libraries were modified.
+    const modified = typeof this.modifiedPaths === 'function' ? this.modifiedPaths() : [];
+    if (Array.isArray(modified) && modified.includes('libraries')) {
+        feedService.refreshFeedForUser(doc._id).catch((err: any) => {
+            console.error('Error refreshing feed after user library change:', err);
+        });
+    }
+};
+
+userSchema.post('save', function(this: any, doc) {
+    userPostSaveHook.call(this, doc as IUser);
+});
 
 export const User = model<IUser>('User', userSchema);

@@ -43,11 +43,6 @@ export class AuthService {
         user.refreshTokens.push(tokens.refreshToken);
         await user.save();
 
-        // Asynchronously pre-calculate feed
-        feedService.preCalculateFeed(user as IUser).catch(err => {
-            console.error('Error pre-calculating feed on login:', err);
-        });
-
         return tokens;
     }
 

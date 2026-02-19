@@ -1,4 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import { feedService } from '../services/feedService.js';
 
 export interface IBook extends Document {
     _id: Types.ObjectId;
@@ -23,5 +24,31 @@ const bookSchema = new Schema<IBook>({
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
+
+export const bookPostSaveHook = function(doc: IBook) {
+    feedService.refreshFeedForUsersInLibrary(doc.library).catch(err => {
+        console.error('Error refreshing feed after book save:', err);
+    });
+};
+
+export const bookPostFindOneAndDeleteHook = function(doc: IBook | null) {
+    if (doc) {
+        feedService.refreshFeedForUsersInLibrary(doc.library).catch(err => {
+            console.error('Error refreshing feed after book deletion:', err);
+        });
+    }
+};
+
+bookSchema.post('save', function(doc) {
+    bookPostSaveHook(doc as IBook);
+});
+
+bookSchema.post('findOneAndDelete', function(doc) {
+    bookPostFindOneAndDeleteHook(doc as IBook | null);
+});
+
+// For update operations, we might need to refresh both old and new library feeds
+// However, findByIdAndUpdate doesn't easily provide the old library ID in a post hook without more complex logic.
+// For now, let's focus on the most common cases.
 
 export const Book = model<IBook>('Book', bookSchema);

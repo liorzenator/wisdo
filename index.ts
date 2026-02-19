@@ -15,6 +15,7 @@ import authRoutes from './src/routes/authRoutes.js';
 import feedRoutes from './src/routes/feedRoutes.js';
 import passport from './src/config/passport.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
+import { feedService } from './src/services/feedService.js';
 
 const { version } = packageJson as { version: string };
 
@@ -26,6 +27,12 @@ connectDatabase().then(async () => {
     if (env.NODE_ENV !== 'production') {
         await seedDatabase();
     }
+    // Pre-calculate all feeds on system boot
+    feedService.preCalculateAllFeeds().then(() => {
+        logger.info('Initial feed calculation completed');
+    }).catch(err => {
+        logger.error('Error in initial feed calculation:', err);
+    });
 });
 
 const port = env.PORT;

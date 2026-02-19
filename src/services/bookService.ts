@@ -42,7 +42,7 @@ export class BookService {
             throw new ServiceError(403, 'User is not a member of the library');
         }
 
-        return this.createBook({
+        const book = await this.createBook({
             title,
             author,
             publishedDate: publishedDate ? new Date(publishedDate as any) : new Date(),
@@ -50,6 +50,8 @@ export class BookService {
             authorCountry,
             library: libId
         } as Partial<IBook>);
+
+        return book;
     }
 
     async listForUser(userLibraryIds: (Types.ObjectId | string)[]): Promise<IBook[]> {
@@ -106,6 +108,7 @@ export class BookService {
 
         const updated = await this.updateBook(id, update);
         // findByIdAndUpdate with new: true guarantees updated not null
+        
         return updated!;
     }
 

@@ -45,7 +45,6 @@ describe('AuthService', () => {
                 save: sinon.stub().resolves()
             };
             sinon.stub(User, 'findOne').resolves(mockUser as any);
-            sinon.stub(feedService, 'preCalculateFeed').resolves();
             
             const tokens = await authService.login('test', 'password');
             
