@@ -36,6 +36,7 @@ export const httpLogger = (req: Request, res: Response, next: NextFunction): voi
     const duration = Date.now() - start;
     const { statusCode } = res;
     const correlationId = req.correlationId || undefined;
+    const user = (req as any).user;
 
     // Prepare bodies for file transport (JSON)
     const reqBody = req.body;
@@ -56,6 +57,7 @@ export const httpLogger = (req: Request, res: Response, next: NextFunction): voi
 
     logger.info(`${method} ${url} ${statusCode} - ${duration}ms`, {
       correlationId,
+      user,
       http: {
         method,
         path: url,
