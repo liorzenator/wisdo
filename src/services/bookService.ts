@@ -1,4 +1,5 @@
 import { Book, IBook } from '../models/Book.js';
+import { Library } from '../models/Library.js';
 import { ServiceError } from "../errors/ServiceError.js";
 import { Types } from 'mongoose';
 import { IUser } from '../models/User.js';
@@ -38,6 +39,11 @@ export class BookService {
         }
 
         const libId = new Types.ObjectId(library as any);
+        const libraryExists = await Library.exists({ _id: libId });
+        if (!libraryExists) {
+            throw new ServiceError(404, 'Library not found');
+        }
+
         if (user.role !== 'admin') {
             const userLibs = (user.libraries || []).map(l => l.toString());
             if (!userLibs.includes(libId.toString())) {
@@ -102,6 +108,11 @@ export class BookService {
         let newLib: Types.ObjectId | undefined = undefined;
         if (library) {
             const newLibId = new Types.ObjectId(library as any);
+            const libraryExists = await Library.exists({ _id: newLibId });
+            if (!libraryExists) {
+                throw new ServiceError(404, 'Library not found');
+            }
+
             if (user.role !== 'admin') {
                 const userLibs = (user.libraries || []).map(l => l.toString());
                 if (!userLibs.includes(newLibId.toString())) {

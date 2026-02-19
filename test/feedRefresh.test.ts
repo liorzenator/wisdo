@@ -22,43 +22,43 @@ describe('Feed Refresh Logic', () => {
         it('Book post-save hook should emit BOOK_CREATED event', async () => {
             const libraryId = new mongoose.Types.ObjectId();
             const book = { library: libraryId } as any;
-            const emitSpy = sinon.spy(domainEvents, 'emit');
+            const emitStub = domainEvents.emit as sinon.SinonStub;
             bookPostSaveHook(book as any);
-            expect(emitSpy.calledWith(DOMAIN_EVENTS.BOOK_CREATED, libraryId)).to.be.true;
+            expect(emitStub.calledWith(DOMAIN_EVENTS.BOOK_CREATED, libraryId)).to.be.true;
         });
 
         it('Book post-findOneAndDelete hook should emit BOOK_DELETED event', async () => {
             const libraryId = new mongoose.Types.ObjectId();
             const book = { library: libraryId } as any;
-            const emitSpy = sinon.spy(domainEvents, 'emit');
+            const emitStub = domainEvents.emit as sinon.SinonStub;
             bookPostFindOneAndDeleteHook(book as any);
-            expect(emitSpy.calledWith(DOMAIN_EVENTS.BOOK_DELETED, libraryId)).to.be.true;
+            expect(emitStub.calledWith(DOMAIN_EVENTS.BOOK_DELETED, libraryId)).to.be.true;
         });
 
         it('User post-save hook should emit USER_LIBRARIES_UPDATED event when libraries modified', async () => {
             const userId = new mongoose.Types.ObjectId();
             const userDoc: any = { _id: userId };
-            const emitSpy = sinon.spy(domainEvents, 'emit');
+            const emitStub = domainEvents.emit as sinon.SinonStub;
             // Simulate 'this' with modifiedPaths returning ['libraries']
             const thisCtx = { modifiedPaths: () => ['libraries'] } as any;
             userPostSaveHook.call(thisCtx, userDoc);
-            expect(emitSpy.calledWith(DOMAIN_EVENTS.USER_LIBRARIES_UPDATED, userId)).to.be.true;
+            expect(emitStub.calledWith(DOMAIN_EVENTS.USER_LIBRARIES_UPDATED, userId)).to.be.true;
         });
 
         it('Library post-findOneAndUpdate hook should emit LIBRARY_UPDATED event', async () => {
             const libraryId = new mongoose.Types.ObjectId();
             const lib = { _id: libraryId } as any;
-            const emitSpy = sinon.spy(domainEvents, 'emit');
+            const emitStub = domainEvents.emit as sinon.SinonStub;
             libraryPostFindOneAndUpdateHook(lib as any);
-            expect(emitSpy.calledWith(DOMAIN_EVENTS.LIBRARY_UPDATED, libraryId)).to.be.true;
+            expect(emitStub.calledWith(DOMAIN_EVENTS.LIBRARY_UPDATED, libraryId)).to.be.true;
         });
 
         it('Library post-findOneAndDelete hook should emit LIBRARY_DELETED event', async () => {
             const libraryId = new mongoose.Types.ObjectId();
             const lib = { _id: libraryId } as any;
-            const emitSpy = sinon.spy(domainEvents, 'emit');
+            const emitStub = domainEvents.emit as sinon.SinonStub;
             libraryPostFindOneAndDeleteHook(lib as any);
-            expect(emitSpy.calledWith(DOMAIN_EVENTS.LIBRARY_DELETED, libraryId)).to.be.true;
+            expect(emitStub.calledWith(DOMAIN_EVENTS.LIBRARY_DELETED, libraryId)).to.be.true;
         });
     });
 
