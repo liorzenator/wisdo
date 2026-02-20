@@ -24,9 +24,15 @@
  *             schema:
  *               type: object
  *               properties:
+ *                 environment:
+ *                   type: string
+ *                 version:
+ *                   type: string
  *                 status:
  *                   type: string
  *                 database:
+ *                   type: string
+ *                 redis:
  *                   type: string
  */
 export {};

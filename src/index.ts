@@ -77,15 +77,15 @@ app.get('/health', async (req: Request, res: Response) => {
     // redisStatus stays 'down'
   }
 
-  const overallStatus = (dbStatus === 'up' && redisStatus === 'up') ? 'ok' : 'degraded';
-
-  res.status(overallStatus === 'ok' ? 200 : 503).json({
-    environment: process.env.NODE_ENV,
+  const responseData = {
+    environment: env.NODE_ENV,
     version,
-    status: overallStatus,
+    status: (dbStatus === 'up' && redisStatus === 'up') ? 'ok' : 'degraded',
     database: dbStatus,
     redis: redisStatus
-  });
+  };
+
+  res.status(responseData.status === 'ok' ? 200 : 503).json(responseData);
 });
 
 app.use(errorHandler as any);

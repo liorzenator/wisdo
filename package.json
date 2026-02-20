@@ -2,9 +2,9 @@
   "name": "wisdo",
   "version": "1.0.0",
   "description": "Wisdo API - A library and book feed management service",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
-    "start": "npm run build && node dist/index.js",
+    "start": "npm run build && node dist/src/index.js",
     "dev": "npx tsx src/index.ts",
     "build": "tsc",
     "test": "cross-env NODE_ENV=test mocha",
