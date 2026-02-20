@@ -52,6 +52,8 @@ export const userPostSaveHook = function(this: any, doc: IUser) {
     }
 };
 
+userSchema.index({ 'refreshTokens.token': 1 });
+
 userSchema.post('save', function(this: any, doc) {
     userPostSaveHook.call(this, doc as IUser);
 });

@@ -29,6 +29,11 @@ export const libraryPostFindOneAndDeleteHook = function(doc: ILibrary | null) {
     }
 };
 
+// Only needed if you filter libraries by location in the future.
+// For now, the admin Library.find({}, '_id') is a full scan but libraries
+// are few compared to books — add this only when you have 10k+ libraries.
+// librarySchema.index({ location: 1 });
+
 librarySchema.post('findOneAndUpdate', function(doc) {
     libraryPostFindOneAndUpdateHook(doc as ILibrary | null);
 });

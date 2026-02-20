@@ -25,6 +25,21 @@ const bookSchema = new Schema<IBook>({
     toObject: { virtuals: true }
 });
 
+// Most critical — used in EVERY feed aggregate and getBooksByLibraryIds
+bookSchema.index({ library: 1 });
+
+// Feed aggregate sorts by sameCountry then weightedScore.
+// This helps MongoDB filter books by library AND country together
+// before it computes the expensive $addFields scoring stage
+bookSchema.index({ library: 1, authorCountry: 1 });
+
+// Feed aggregate uses publishedDate to compute ageInYears —
+// having it indexed helps when the dataset is large
+bookSchema.index({ publishedDate: -1 });
+
+// Optional: if you add search by title/author later
+bookSchema.index({ title: 'text', author: 'text' });
+
 export const bookPostSaveHook = function(doc: IBook) {
     domainEvents.emit(DOMAIN_EVENTS.BOOK_CREATED, doc.library);
 };
