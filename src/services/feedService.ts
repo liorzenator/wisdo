@@ -1,7 +1,7 @@
 import {Types} from 'mongoose';
 import {Book, IBook} from '../models/Book.js';
 import {Library} from '../models/Library.js';
-import { getUserFeedIds, setUserFeedIds, deleteUserFeed } from '../utils/cache.js';
+import { cache } from '../utils/cache.js';
 import {IUser, User} from "../models/User.js";
 import { DOMAIN_EVENTS, domainEvents } from '../utils/domainEvents.js';
 
@@ -16,11 +16,11 @@ export class FeedService {
     async getFeedForUser(limit: number = 10, user: IUser): Promise<IBook[]> {
         // Try to get from cache (Redis) first if userId is provided
         if (user._id) {
-            const cachedIds = await getUserFeedIds(user._id);
+            const cachedIds = await cache.getUserFeedIds(user._id);
             if (cachedIds && cachedIds.length > 0) {
                 const limitedIds = cachedIds.slice(0, limit).map(id => new Types.ObjectId(id));
-                const docs = await Book.find({ _id: { $in: limitedIds } });
-                const map = new Map(docs.map(d => [d._id.toString(), d]));
+                const docs = await Book.find({ _id: { $in: limitedIds } }).lean().exec();
+                const map = new Map(docs.map((d: any) => [d._id.toString(), d]));
                 const ordered = limitedIds.map(id => map.get(id.toString())).filter(Boolean) as IBook[];
                 return ordered;
             }
@@ -91,7 +91,7 @@ export class FeedService {
 
         // Update cache asynchronously in Redis if userId is provided
         if (user._id) {
-            setUserFeedIds(user._id, scoredBooks.map(b => b._id)).catch(err => logger.error('Error updating cache:', err));
+            cache.setUserFeedIds(user._id, scoredBooks.map(b => b._id)).catch(err => logger.error('Error updating cache:', err));
         }
 
         return scoredBooks.slice(0, limit);
@@ -100,7 +100,7 @@ export class FeedService {
     async preCalculateFeed(user: IUser) {
         const libraryIds = (user.libraries || []).map(id => new Types.ObjectId(id as any));
         if (libraryIds.length === 0) {
-            await deleteUserFeed(user._id);
+            await cache.deleteUserFeed(user._id);
             return;
         }
 
@@ -153,12 +153,12 @@ export class FeedService {
         ]);
 
         if (scoredBooks.length === 0) {
-            await deleteUserFeed(user._id);
+            await cache.deleteUserFeed(user._id);
             return;
         }
 
         const result = scoredBooks.map(sb => sb._id);
-        await setUserFeedIds(user._id, result);
+        await cache.setUserFeedIds(user._id, result);
     }
 
     async preCalculateAllFeeds() {

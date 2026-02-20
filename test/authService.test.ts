@@ -3,8 +3,6 @@ import sinon from 'sinon';
 import jwt from 'jsonwebtoken';
 import { User } from '../src/models/User.js';
 import { authService } from '../src/services/authService.js';
-import { feedService } from '../src/services/feedService.js';
-import env from '../src/config/environment.js';
 import { ServiceError } from '../src/errors/ServiceError.js';
 import mongoose from 'mongoose';
 

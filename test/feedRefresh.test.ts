@@ -18,8 +18,8 @@ describe('Feed Refresh Logic', () => {
         sinon.restore();
     });
 
-    describe('Model Hooks', () => {
-        it('Book post-save hook should emit BOOK_CREATED event', async () => {
+    describe('Domain Event Hooks', () => {
+        it('should emit BOOK_CREATED when a new book is saved to a library', async () => {
             const libraryId = new mongoose.Types.ObjectId();
             const book = { library: libraryId } as any;
             const emitStub = domainEvents.emit as sinon.SinonStub;
@@ -27,7 +27,7 @@ describe('Feed Refresh Logic', () => {
             expect(emitStub.calledWith(DOMAIN_EVENTS.BOOK_CREATED, libraryId)).to.be.true;
         });
 
-        it('Book post-findOneAndDelete hook should emit BOOK_DELETED event', async () => {
+        it('should emit BOOK_DELETED when a book is removed from the database', async () => {
             const libraryId = new mongoose.Types.ObjectId();
             const book = { library: libraryId } as any;
             const emitStub = domainEvents.emit as sinon.SinonStub;
@@ -35,7 +35,7 @@ describe('Feed Refresh Logic', () => {
             expect(emitStub.calledWith(DOMAIN_EVENTS.BOOK_DELETED, libraryId)).to.be.true;
         });
 
-        it('User post-save hook should emit USER_LIBRARIES_UPDATED event when libraries modified', async () => {
+        it('should emit USER_LIBRARIES_UPDATED when user library associations change', async () => {
             const userId = new mongoose.Types.ObjectId();
             const userDoc: any = { _id: userId };
             const emitStub = domainEvents.emit as sinon.SinonStub;
@@ -62,8 +62,8 @@ describe('Feed Refresh Logic', () => {
         });
     });
 
-    describe('FeedService.preCalculateAllFeeds', () => {
-        it('should call preCalculateFeed for all users', async () => {
+    describe('preCalculateAllFeeds', () => {
+        it('should trigger feed calculation for every registered user', async () => {
             const users = [
                 { _id: new mongoose.Types.ObjectId() },
                 { _id: new mongoose.Types.ObjectId() }
