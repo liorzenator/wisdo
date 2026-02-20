@@ -37,7 +37,7 @@ describe('authMiddleware', () => {
 
         const libraryFindSpy = sinon.spy(Library, 'find');
 
-        await authMiddleware(req, res, next);
+        authMiddleware(req, res, next);
 
         expect(mockAdmin.libraries).to.have.lengthOf(0);
         expect(libraryFindSpy.called).to.be.false;
@@ -60,7 +60,7 @@ describe('authMiddleware', () => {
 
         const libraryFindSpy = sinon.spy(Library, 'find');
 
-        await authMiddleware(req, res, next);
+        authMiddleware(req, res, next);
 
         expect(mockUser.libraries).to.deep.equal(initialLibraries);
         expect(libraryFindSpy.called).to.be.false;

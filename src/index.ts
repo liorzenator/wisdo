@@ -25,7 +25,7 @@ const app = express();
 
 // Connect to database
 connectDatabase().then(async () => {
-    if (env.NODE_ENV !== 'production') {
+    if (env.SEED_ON_STARTUP) {
         await seedDatabase();
     }
     // Pre-calculate all feeds on system boot

@@ -9,7 +9,10 @@ interface EnvVars {
     JWT_ACCESS_EXPIRATION: string;
     JWT_REFRESH_EXPIRATION: string;
     REDIS_URL: string;
-    FEED_CACHE_TTL: number
+    FEED_CACHE_TTL: number;
+    SEED_ON_STARTUP?: boolean;
+    ADMIN_USERNAME?: string;
+    ADMIN_PASSWORD?: string;
 }
 
 const envSchema = Joi.object<EnvVars>({
@@ -21,7 +24,10 @@ const envSchema = Joi.object<EnvVars>({
     JWT_ACCESS_EXPIRATION: Joi.string().default('15m'),
     JWT_REFRESH_EXPIRATION: Joi.string().default('7d'),
     REDIS_URL: Joi.string().uri().required(),
-    FEED_CACHE_TTL: Joi.number().default(3600)
+    FEED_CACHE_TTL: Joi.number().default(3600),
+    SEED_ON_STARTUP: Joi.boolean().default(false),
+    ADMIN_USERNAME: Joi.string().default('admin'),
+    ADMIN_PASSWORD: Joi.string().min(8).default('adminpassword123')
 }).unknown(); // allows other env vars
 
 const { error, value } = envSchema.validate(process.env, { abortEarly: false });

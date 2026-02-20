@@ -3,21 +3,22 @@ import { Library } from '../models/Library.js';
 import { Book } from '../models/Book.js';
 import { getLogger } from '../config/logger.js';
 import { faker } from '@faker-js/faker';
+import env from '../config/environment.js';
 
 const logger = getLogger(import.meta.url);
 
 export const seedDatabase = async () => {
     try {
-        logger.info('Resetting and seeding database with faker data...');
+        // Check if database already has data to maintain idempotency
+        const userCount = await User.countDocuments();
+        const bookCount = await Book.countDocuments();
+        
+        if (userCount > 0 || bookCount > 0) {
+            logger.info('Database already contains data. Skipping seeding to maintain idempotency.');
+            return;
+        }
 
-        // Clear existing data
-        await Promise.all([
-            User.deleteMany({}),
-            Library.deleteMany({}),
-            Book.deleteMany({})
-        ]);
-
-        logger.info('Database cleared.');
+        logger.info('Seeding database with faker data...');
 
         // Create 10 Libraries
         const libraries = [];
@@ -31,11 +32,11 @@ export const seedDatabase = async () => {
 
         logger.info('Libraries created.');
 
-        // Create a hardcoded admin user
+        // Create a hardcoded admin user from environment variables
         const allLibraryIds = libraries.map(lib => lib._id);
         const hardcodedAdmin = await User.create({
-            username: 'admin',
-            password: 'adminpassword123',
+            username: env.ADMIN_USERNAME,
+            password: env.ADMIN_PASSWORD,
             country: 'USA',
             libraries: allLibraryIds,
             role: 'admin'
