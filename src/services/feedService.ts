@@ -18,7 +18,8 @@ export class FeedService {
         if (user._id) {
             const cachedIds = await cache.getUserFeedIds(user._id);
             if (cachedIds && cachedIds.length > 0) {
-                const limitedIds = cachedIds.slice(0, limit).map(id => new Types.ObjectId(id));
+                const validIds = cachedIds.filter(id => Types.ObjectId.isValid(id));
+                const limitedIds = validIds.slice(0, limit).map(id => new Types.ObjectId(id));
                 const docs = await Book.find({ _id: { $in: limitedIds } }).lean().exec();
                 const map = new Map(docs.map((d: any) => [d._id.toString(), d]));
                 const ordered = limitedIds.map(id => map.get(id.toString())).filter(Boolean) as IBook[];
@@ -31,7 +32,7 @@ export class FeedService {
             const allLibraries = await Library.find({}, '_id');
             libraryIds = allLibraries.map(lib => lib._id);
         } else {
-            libraryIds = (user.libraries || []).map(id => new Types.ObjectId(id as any));
+            libraryIds = (user.libraries || []).filter(id => Types.ObjectId.isValid(id as any)).map(id => new Types.ObjectId(id as any));
         }
 
         if (libraryIds.length === 0) {
@@ -98,7 +99,7 @@ export class FeedService {
     }
 
     async preCalculateFeed(user: IUser) {
-        const libraryIds = (user.libraries || []).map(id => new Types.ObjectId(id as any));
+        const libraryIds = (user.libraries || []).filter(id => Types.ObjectId.isValid(id as any)).map(id => new Types.ObjectId(id as any));
         if (libraryIds.length === 0) {
             await cache.deleteUserFeed(user._id);
             return;

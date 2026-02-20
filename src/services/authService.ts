@@ -3,8 +3,13 @@ import { IUser, User } from '../models/User.js';
 import env from '../config/environment.js';
 import { ServiceError } from '../errors/ServiceError.js';
 import { feedService } from './feedService.js';
+import crypto from 'crypto';
 
 export class AuthService {
+    private hashToken(token: string): string {
+        return crypto.createHash('sha256').update(token).digest('hex');
+    }
+
     private async generateTokens(userId: string, username: string, role?: string) {
         const payload = { id: userId, username, role };
         
@@ -40,7 +45,7 @@ export class AuthService {
         const tokens = await this.generateTokens(user._id.toString(), user.username, user.role);
         
         // Save refresh token to user
-        user.refreshTokens.push({ token: tokens.refreshToken });
+        user.refreshTokens.push({ token: this.hashToken(tokens.refreshToken) });
         await user.save();
 
         return tokens;
@@ -59,17 +64,12 @@ export class AuthService {
                 throw new ServiceError(401, 'Invalid refresh token');
             }
 
-            const tokenData = user.refreshTokens.find(t => t.token === refreshToken);
+            const hashedToken = this.hashToken(refreshToken);
+            const tokenData = user.refreshTokens.find(t => t.token === hashedToken);
 
             // Token reuse detection
             if (!tokenData) {
-                // If the token is not found, but it was previously used (replacedBy exists), 
-                // it might be a malicious reuse attempt.
-                // We should check if this token was ever in the list but was replaced.
-                // Since we store replacedBy, we can find it.
-                // Wait, if it was already used and replaced, it SHOULD still be in the list if we don't remove it.
-                // Let's refine: if we find the token and it has replacedBy, it's reuse.
-                // If we don't find it at all, it's either invalid or we already purged it.
+                // If the token is not found, it might be a malicious reuse attempt or already purged.
                 throw new ServiceError(401, 'Invalid refresh token');
             }
 
@@ -85,8 +85,9 @@ export class AuthService {
             const tokens = await this.generateTokens(user._id.toString(), user.username, user.role);
             
             // Mark old token as replaced and add new one
-            tokenData.replacedBy = tokens.refreshToken;
-            user.refreshTokens.push({ token: tokens.refreshToken });
+            const newHashedToken = this.hashToken(tokens.refreshToken);
+            tokenData.replacedBy = newHashedToken;
+            user.refreshTokens.push({ token: newHashedToken });
             
             // Optional: Limit the number of refresh tokens (e.g., keep only last 10)
             if (user.refreshTokens.length > 50) {

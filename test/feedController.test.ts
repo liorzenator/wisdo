@@ -57,5 +57,23 @@ describe('FeedController', () => {
 
             expect(getFeedStub.calledWith(10, req.user)).to.be.true;
         });
+
+        it('should clamp limit if it is too high', async () => {
+            req.query = { limit: '999' };
+            const getFeedStub = sinon.stub(feedService, 'getFeedForUser').resolves([]);
+
+            await feedController.getFeed(req as any, res as any);
+
+            expect(getFeedStub.calledWith(100, req.user)).to.be.true;
+        });
+
+        it('should clamp limit if it is too low', async () => {
+            req.query = { limit: '-50' };
+            const getFeedStub = sinon.stub(feedService, 'getFeedForUser').resolves([]);
+
+            await feedController.getFeed(req as any, res as any);
+
+            expect(getFeedStub.calledWith(1, req.user)).to.be.true;
+        });
     });
 });

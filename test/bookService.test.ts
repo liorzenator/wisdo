@@ -43,6 +43,24 @@ describe('BookService Library Validation', () => {
                 expect(error.message).to.equal('Library not found');
             }
         });
+
+        it('should throw 400 if library ID format is invalid', async () => {
+            const bookData = {
+                title: 'Test Book',
+                author: 'Test Author',
+                authorCountry: 'USA',
+                library: 'invalid-id'
+            };
+
+            try {
+                await bookService.createForUser(mockUser, bookData as any);
+                expect.fail('Should have thrown ServiceError');
+            } catch (error: any) {
+                expect(error).to.be.instanceOf(ServiceError);
+                expect(error.status).to.equal(400);
+                expect(error.message).to.equal('Invalid library ID format');
+            }
+        });
     });
 
     describe('updateForUser', () => {
@@ -67,6 +85,28 @@ describe('BookService Library Validation', () => {
                 expect(error).to.be.instanceOf(ServiceError);
                 expect(error.status).to.equal(404);
                 expect(error.message).to.equal('Library not found');
+            }
+        });
+
+        it('should throw 400 if new library ID format is invalid', async () => {
+            const bookId = new Types.ObjectId();
+            const existingLibId = new Types.ObjectId();
+            
+            const existingBook = {
+                _id: bookId,
+                library: existingLibId,
+                title: 'Existing Book'
+            };
+
+            sinon.stub(bookService, 'getBookById').resolves(existingBook as any);
+
+            try {
+                await bookService.updateForUser(mockUser, bookId.toString(), { library: 'invalid-id' } as any);
+                expect.fail('Should have thrown ServiceError');
+            } catch (error: any) {
+                expect(error).to.be.instanceOf(ServiceError);
+                expect(error.status).to.equal(400);
+                expect(error.message).to.equal('Invalid library ID format');
             }
         });
     });

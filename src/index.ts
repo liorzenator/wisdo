@@ -31,12 +31,15 @@ connectDatabase().then(async () => {
     if (env.SEED_ON_STARTUP) {
         await seedDatabase();
     }
-    // Pre-calculate all feeds on system boot
-    feedService.preCalculateAllFeeds().then(() => {
-        logger.info('Initial feed calculation completed');
-    }).catch(err => {
-        logger.error('Error in initial feed calculation:', err);
-    });
+    // Pre-calculate all feeds on system boot - using a small delay to not block startup
+    // In a real production app, this should be a background job
+    setTimeout(() => {
+        feedService.preCalculateAllFeeds().then(() => {
+            logger.info('Initial feed calculation completed');
+        }).catch(err => {
+            logger.error('Error in initial feed calculation:', err);
+        });
+    }, 1000);
 });
 
 const port = env.PORT;
@@ -74,10 +77,12 @@ app.get('/health', async (req: Request, res: Response) => {
     // redisStatus stays 'down'
   }
 
-  res.json({
+  const overallStatus = (dbStatus === 'up' && redisStatus === 'up') ? 'ok' : 'degraded';
+
+  res.status(overallStatus === 'ok' ? 200 : 503).json({
     environment: process.env.NODE_ENV,
     version,
-    status: 'ok',
+    status: overallStatus,
     database: dbStatus,
     redis: redisStatus
   });

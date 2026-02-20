@@ -5,6 +5,11 @@ import { User } from '../src/models/User.js';
 import { authService } from '../src/services/authService.js';
 import { ServiceError } from '../src/errors/ServiceError.js';
 import mongoose from 'mongoose';
+import crypto from 'crypto';
+
+const hashToken = (token: string): string => {
+    return crypto.createHash('sha256').update(token).digest('hex');
+};
 
 describe('AuthService', () => {
     afterEach(() => {
@@ -49,7 +54,7 @@ describe('AuthService', () => {
             expect(tokens).to.have.property('accessToken');
             expect(tokens).to.have.property('refreshToken');
             expect(mockUser.refreshTokens).to.have.lengthOf(1);
-            expect(mockUser.refreshTokens[0].token).to.equal(tokens.refreshToken);
+            expect(mockUser.refreshTokens[0].token).to.equal(hashToken(tokens.refreshToken));
             expect(mockUser.save.calledOnce).to.be.true;
         });
     });
@@ -67,35 +72,37 @@ describe('AuthService', () => {
 
         it('should refresh tokens successfully', async () => {
             const userId = new mongoose.Types.ObjectId();
-            const oldToken = 'old-token';
+            const rawToken = 'raw-token';
+            const hashedToken = hashToken(rawToken);
             const mockUser = {
                 _id: userId,
                 username: 'test',
                 role: 'user',
-                refreshTokens: [{ token: oldToken }] as any[],
+                refreshTokens: [{ token: hashedToken }] as any[],
                 save: sinon.stub().resolves()
             };
 
             sinon.stub(jwt, 'verify').returns({ id: userId.toString() } as any);
             sinon.stub(User, 'findById').resolves(mockUser as any);
 
-            const tokens = await authService.refresh(oldToken);
+            const tokens = await authService.refresh(rawToken);
 
             expect(tokens).to.have.property('accessToken');
             expect(tokens).to.have.property('refreshToken');
-            expect(mockUser.refreshTokens.find(t => t.token === oldToken)?.replacedBy).to.equal(tokens.refreshToken);
+            expect(mockUser.refreshTokens.find(t => t.token === hashedToken)?.replacedBy).to.equal(hashToken(tokens.refreshToken));
             expect(mockUser.refreshTokens).to.have.lengthOf(2);
             expect(mockUser.save.calledOnce).to.be.true;
         });
 
         it('should detect token reuse and invalidate all tokens', async () => {
             const userId = new mongoose.Types.ObjectId();
-            const oldToken = 'old-token';
+            const rawToken = 'raw-token';
+            const hashedToken = hashToken(rawToken);
             const mockUser = {
                 _id: userId,
                 username: 'test',
                 role: 'user',
-                refreshTokens: [{ token: oldToken, replacedBy: 'new-token' }] as any[],
+                refreshTokens: [{ token: hashedToken, replacedBy: 'new-hashed-token' }] as any[],
                 save: sinon.stub().resolves()
             };
 
@@ -103,7 +110,7 @@ describe('AuthService', () => {
             sinon.stub(User, 'findById').resolves(mockUser as any);
 
             try {
-                await authService.refresh(oldToken);
+                await authService.refresh(rawToken);
                 expect.fail('Should have thrown error');
             } catch (error: any) {
                 expect(error).to.be.instanceOf(ServiceError);

@@ -47,6 +47,9 @@ export class BookService {
             throw new ServiceError(400, 'Pages must be greater than 0');
         }
 
+        if (library && !Types.ObjectId.isValid(library as string)) {
+            throw new ServiceError(400, 'Invalid library ID format');
+        }
         const libId = new Types.ObjectId(library as any);
         const libraryExists = await Library.exists({ _id: libId });
         if (!libraryExists) {
@@ -101,6 +104,9 @@ export class BookService {
         }
         let newLib: Types.ObjectId | undefined = undefined;
         if (library) {
+            if (library && !Types.ObjectId.isValid(library as string)) {
+                throw new ServiceError(400, 'Invalid library ID format');
+            }
             const newLibId = new Types.ObjectId(library as any);
             const libraryExists = await Library.exists({ _id: newLibId });
             if (!libraryExists) {
