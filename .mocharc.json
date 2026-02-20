@@ -5,5 +5,5 @@
   ],
   "spec": "test/**/*.test.ts",
   "extension": ["ts"],
-  "require": ["dotenv/config", "test/hooks.ts"]
+  "require": ["test/setupEnv.ts", "test/hooks.ts"]
 }

@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import 'dotenv/config';
-import env from './config/environment.js';
+import env, { validateEnv } from './config/environment.js';
 import connectDatabase from './config/database.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
@@ -22,6 +22,9 @@ const { version } = packageJson as { version: string };
 
 const logger = getLogger(import.meta.url);
 const app = express();
+
+// Validate environment variables
+validateEnv();
 
 // Connect to database
 connectDatabase().then(async () => {

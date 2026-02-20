@@ -30,11 +30,14 @@ const envSchema = Joi.object<EnvVars>({
     ADMIN_PASSWORD: Joi.string().min(8).default('adminpassword123')
 }).unknown(); // allows other env vars
 
-const { error, value } = envSchema.validate(process.env, { abortEarly: false });
+export const validateEnv = () => {
+    const { error } = envSchema.validate(process.env, { abortEarly: false });
+    if (error) {
+        const errorMessages = error.details.map(detail => detail.message).join(', ');
+        throw new Error(`Environment validation error: ${errorMessages}`);
+    }
+};
 
-if (error) {
-    const errorMessages = error.details.map(detail => detail.message).join(', ');
-    throw new Error(`Environment validation error: ${errorMessages}`);
-}
+const { value } = envSchema.validate(process.env, { abortEarly: false, allowUnknown: true });
 
 export default value as EnvVars;

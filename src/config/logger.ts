@@ -1,5 +1,4 @@
 import winston from 'winston';
-import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
