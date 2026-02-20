@@ -67,13 +67,13 @@ describe('FeedService', () => {
             const adminUser = { ...mockUser, role: 'admin', libraries: [] };
             const libs = [{ _id: new Types.ObjectId() }, { _id: new Types.ObjectId() }];
             
-            sinon.stub(Library, 'find').resolves(libs as any);
+            const findStub = sinon.stub(Library, 'find').resolves(libs as any);
             const aggregateStub = sinon.stub(Book, 'aggregate').resolves([]);
 
             await feedService.getFeedForUser(10, adminUser);
 
-            expect(Library.find.calledOnce).to.be.true;
-            const matchStep = aggregateStub.firstCall.args[0][0];
+            expect(findStub.calledOnce).to.be.true;
+            const matchStep = aggregateStub.firstCall.args[0][0] as mongoose.PipelineStage.Match;
             expect(matchStep.$match.library.$in).to.have.lengthOf(2);
         });
 

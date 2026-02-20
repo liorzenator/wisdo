@@ -12,6 +12,8 @@ describe('Feed Integration Flow', () => {
     let mockUser: any;
     let mockLibrary: any;
 
+    let setUserFeedIdsStub: sinon.SinonStub;
+
     beforeEach(async () => {
         // We still use mocks for DB models to avoid requiring a real MongoDB connection 
         // in this "integration-style" test, but we flow through the real service logic.
@@ -26,7 +28,7 @@ describe('Feed Integration Flow', () => {
         sinon.stub(User, 'findById').resolves(mockUser);
         sinon.stub(Library, 'find').resolves([mockLibrary]);
         sinon.stub(cache, 'getUserFeedIds').resolves(null);
-        sinon.stub(cache, 'setUserFeedIds').resolves();
+        setUserFeedIdsStub = sinon.stub(cache, 'setUserFeedIds').resolves();
     });
 
     afterEach(() => {
@@ -46,7 +48,7 @@ describe('Feed Integration Flow', () => {
 
         expect(feed).to.have.lengthOf(2);
         expect(feed[0].title).to.equal('Book 1');
-        expect(cache.setUserFeedIds.calledOnce).to.be.true;
+        expect(setUserFeedIdsStub.calledOnce).to.be.true;
     });
 
     it('should return an empty feed if the user has no libraries', async () => {
