@@ -11,9 +11,7 @@ import mongoose from 'mongoose';
 import { getRedisClient } from './config/redis.js';
 import packageJson from '../package.json' with { type: 'json' };
 import { seedDatabase } from './utils/seeder.js';
-import bookRoutes from './routes/bookRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import feedRoutes from './routes/feedRoutes.js';
+import routes from './routes/index.js';
 import passport from './config/passport.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { feedService } from './services/feedService.js';
@@ -49,44 +47,13 @@ app.use(correlationIdMiddleware);
 app.use(httpLogger);
 app.use(passport.initialize());
 
-app.use('/api/auth', authRoutes);
-app.use('/api/books', bookRoutes);
-app.use('/feed', feedRoutes);
+app.use('/', routes);
 
 // Swagger documentation
 if (env.NODE_ENV !== 'production') {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   logger.info('Swagger documentation enabled on /api-docs');
 }
-
-// Routes (documentation moved to /docs)
-app.get('/', (req: Request, res: Response) => {
-  res.json({ message: 'Welcome to Wisdo API' });
-});
-
-app.get('/health', async (req: Request, res: Response) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? 'up' : 'down';
-  
-  let redisStatus = 'down';
-  try {
-    const redisClient = await getRedisClient();
-    if (redisClient && redisClient.isOpen) {
-      redisStatus = 'up';
-    }
-  } catch (err) {
-    // redisStatus stays 'down'
-  }
-
-  const responseData = {
-    environment: env.NODE_ENV,
-    version,
-    status: (dbStatus === 'up' && redisStatus === 'up') ? 'ok' : 'degraded',
-    database: dbStatus,
-    redis: redisStatus
-  };
-
-  res.status(responseData.status === 'ok' ? 200 : 503).json(responseData);
-});
 
 app.use(errorHandler as any);
 

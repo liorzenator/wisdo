@@ -1,18 +1,23 @@
-import { User } from '../models/User.js';
-import { Library } from '../models/Library.js';
-import { Book } from '../models/Book.js';
-import { getLogger } from '../config/logger.js';
-import { faker } from '@faker-js/faker';
+import {User} from '../models/User.js';
+import {Library} from '../models/Library.js';
+import {Book} from '../models/Book.js';
+import {getLogger} from '../config/logger.js';
+import {faker} from '@faker-js/faker';
 import env from '../config/environment.js';
 
 const logger = getLogger(import.meta.url);
 
 export const seedDatabase = async () => {
+    if (env.NODE_ENV !== 'development') {
+        throw new Error('Cannot seed database in non-development environment.');
+    }
+
     try {
+
         // Check if database already has data to maintain idempotency
         const userCount = await User.countDocuments();
         const bookCount = await Book.countDocuments();
-        
+
         if (userCount > 0 || bookCount > 0) {
             logger.info('Database already contains data. Skipping seeding to maintain idempotency.');
             return;
@@ -41,7 +46,7 @@ export const seedDatabase = async () => {
             libraries: allLibraryIds,
             role: 'admin'
         });
-        
+
         logger.info(`Hardcoded admin user created: ${hardcodedAdmin.username}`);
 
         // Create 4 additional Users with different roles and link them to random libraries
@@ -49,11 +54,11 @@ export const seedDatabase = async () => {
         const users = [hardcodedAdmin];
         for (let i = 0; i < 4; i++) {
             const role = roles[i];
-            const numLibraries = faker.number.int({ min: 1, max: 3 });
-            const selectedLibraries = role === 'admin' 
-                ? allLibraryIds 
+            const numLibraries = faker.number.int({min: 1, max: 3});
+            const selectedLibraries = role === 'admin'
+                ? allLibraryIds
                 : faker.helpers.arrayElements(libraries, numLibraries).map(lib => lib._id);
-            
+
             const user = await User.create({
                 username: faker.internet.username(),
                 password: 'password123',
@@ -71,8 +76,8 @@ export const seedDatabase = async () => {
             booksData.push({
                 title: faker.book.title(),
                 author: faker.book.author(),
-                publishedDate: faker.date.past({ years: 50 }),
-                pages: faker.number.int({ min: 50, max: 1000 }),
+                publishedDate: faker.date.past({years: 50}),
+                pages: faker.number.int({min: 50, max: 1000}),
                 authorCountry: faker.location.country(),
                 library: library._id
             });

@@ -14,12 +14,25 @@ export const getRedisClient = async (): Promise<ReturnType<typeof createClient> 
   
   connectionPromise = (async () => {
     try {
-      const c = createClient({ url });
+      const c = createClient({ 
+        url,
+        socket: {
+          reconnectStrategy: (retries) => {
+            // Reconnect every 5 seconds, up to a point, then maybe slower
+            // This prevents the "AggregateError" flood from node-redis
+            return Math.min(retries * 100, 5000);
+          }
+        }
+      });
 
       c.on('error', (err: any) => {
         // Only log errors if we're not already trying to connect
         // or if it's a new type of error to avoid log spam
         if (c.isOpen) {
+            // Check if it's a connection error when it's supposed to be open
+            if (err?.code === 'ECONNREFUSED' || err?.message?.includes('ECONNREFUSED')) {
+                // We might want to handle this specifically or just let it be logged once
+            }
             logger.warn('Redis client error: %s', err?.message || err);
         }
       });
@@ -36,6 +49,26 @@ export const getRedisClient = async (): Promise<ReturnType<typeof createClient> 
   })();
 
   return connectionPromise;
+};
+
+export const getRedisStatus = async (): Promise<string | null> => {
+  if (!client) return null;
+
+  try {
+    if (client && client.isOpen) {
+      // Use a timeout to prevent hanging if Redis is unreachable but client thinks it's open
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Redis ping timeout')), 1000)
+      );
+      
+      await Promise.race([client.ping(), timeoutPromise]);
+      return 'up';
+    }
+    return 'down';
+  } catch (err) {
+    logger.warn('Error checking Redis status: %s', (err as Error)?.message || err);
+    return 'down';
+  }
 };
 
 export const quitRedis = async (): Promise<void> => {
