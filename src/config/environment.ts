@@ -1,43 +1,35 @@
-import Joi from 'joi';
+import { z } from 'zod';
 
-interface EnvVars {
-    NODE_ENV: 'development' | 'production' | 'test';
-    PORT: number;
-    DATABASE_URL: string;
-    JWT_SECRET: string;
-    JWT_REFRESH_SECRET: string;
-    JWT_ACCESS_EXPIRATION: string;
-    JWT_REFRESH_EXPIRATION: string;
-    REDIS_URL: string;
-    FEED_CACHE_TTL: number;
-    SEED_ON_STARTUP?: boolean;
-    ADMIN_USERNAME?: string;
-    ADMIN_PASSWORD?: string;
-}
+const envSchema = z.object({
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+    PORT: z.coerce.number().default(3000),
+    DATABASE_URL: z.string().url(),
+    JWT_SECRET: z.string().min(32),
+    JWT_REFRESH_SECRET: z.string().min(32),
+    JWT_ACCESS_EXPIRATION: z.string().default('15m'),
+    JWT_REFRESH_EXPIRATION: z.string().default('7d'),
+    REDIS_URL: z.string().url(),
+    FEED_CACHE_TTL: z.coerce.number().default(3600),
+    SEED_ON_STARTUP: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
+    ADMIN_USERNAME: z.string().default('admin'),
+    ADMIN_PASSWORD: z.string().min(8).default('adminpassword123')
+}).passthrough();
 
-const envSchema = Joi.object<EnvVars>({
-    NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
-    PORT: Joi.number().default(3000),
-    DATABASE_URL: Joi.string().uri().required(),
-    JWT_SECRET: Joi.string().min(32).required(),
-    JWT_REFRESH_SECRET: Joi.string().min(32).required(),
-    JWT_ACCESS_EXPIRATION: Joi.string().default('15m'),
-    JWT_REFRESH_EXPIRATION: Joi.string().default('7d'),
-    REDIS_URL: Joi.string().uri().required(),
-    FEED_CACHE_TTL: Joi.number().default(3600),
-    SEED_ON_STARTUP: Joi.boolean().default(false),
-    ADMIN_USERNAME: Joi.string().default('admin'),
-    ADMIN_PASSWORD: Joi.string().min(8).default('adminpassword123')
-}).unknown(); // allows other env vars
+export type EnvVars = z.infer<typeof envSchema>;
 
 export const validateEnv = () => {
-    const { error } = envSchema.validate(process.env, { abortEarly: false });
-    if (error) {
-        const errorMessages = error.details.map(detail => detail.message).join(', ');
+    const result = envSchema.safeParse(process.env);
+    if (!result.success) {
+        const errorMessages = result.error.issues.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
         throw new Error(`Environment validation error: ${errorMessages}`);
     }
 };
 
-const { value } = envSchema.validate(process.env, { abortEarly: false, allowUnknown: true });
+const result = envSchema.safeParse(process.env);
+if (!result.success) {
+    // In some environments, we might want to just log and exit or use defaults
+    // For now, let's just parse what we can or throw
+    console.warn('Environment validation warning:', result.error.format());
+}
 
-export default value as EnvVars;
+export default (result.success ? result.data : process.env) as EnvVars;

@@ -20,7 +20,7 @@ export class BookService {
     }
 
     async updateBook(id: string, updateData: Partial<IBook>): Promise<IBook | null> {
-        return Book.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        return Book.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: true });
     }
 
     async deleteBook(id: string): Promise<IBook | null> {
