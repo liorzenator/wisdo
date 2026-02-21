@@ -1,4 +1,5 @@
 import winston from 'winston';
+import 'winston-daily-rotate-file';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -89,8 +90,12 @@ const baseLogger = winston.createLogger({
     // - Write all logs with importance level of `error` or less to `error.log`
     // - Write all logs with importance level of `info` or less to `combined.log`
     //
-    new winston.transports.File({
-      filename: 'logs/error.log',
+    new winston.transports.DailyRotateFile({
+      filename: 'logs/error-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '10m',
+      maxFiles: '7',
       level: 'error',
       format: winston.format.combine(
         redactFormat(),
@@ -98,8 +103,12 @@ const baseLogger = winston.createLogger({
         winston.format.json()
       )
     }),
-    new winston.transports.File({
-      filename: 'logs/combined.log',
+    new winston.transports.DailyRotateFile({
+      filename: 'logs/combined-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '10m',
+      maxFiles: '7',
       format: winston.format.combine(
         redactFormat(),
         restructureFormat(),
