@@ -163,9 +163,11 @@ export class FeedService {
     }
 
     async preCalculateAllFeeds() {
-        const users = await User.find({});
-        const promises = users.map(user => this.preCalculateFeed(user));
-        await Promise.all(promises);
+        const cursor = User.find({}).cursor();
+
+        for await (const user of cursor) {
+            await this.preCalculateFeed(user);
+        }
     }
 
     async refreshFeedForUsersInLibrary(libraryId: string | Types.ObjectId) {
