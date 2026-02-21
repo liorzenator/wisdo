@@ -68,7 +68,18 @@ describe('Feed Refresh Logic', () => {
                 { _id: new mongoose.Types.ObjectId() },
                 { _id: new mongoose.Types.ObjectId() }
             ];
-            sinon.stub(User, 'find').resolves(users as any);
+            
+            const cursorStub = {
+                async *[Symbol.asyncIterator]() {
+                    for (const user of users) {
+                        yield user;
+                    }
+                }
+            };
+
+            sinon.stub(User, 'find').returns({
+                cursor: sinon.stub().returns(cursorStub)
+            } as any);
 
             await feedService.preCalculateAllFeeds();
 
